@@ -1,29 +1,46 @@
-<?php
+import requests
+import time
 
-$phone_number = readline("[-] Enter Phone Number [+] : ");
-print "collecting information in progress...."."\n";
-sleep(5);
+api_key = "PZi73PCJs4WuiIzTAryqAtzGZroxLWxm"
 
-$ch = curl_init('http://apilayer.net/api/validate?access_key='.$api.'&number='.$phone_number.'');  
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+phone_number = input("[-] Enter Phone Number [+] : ").strip()
 
-$json = curl_exec($ch);
-curl_close($ch);
+if phone_number == "":
+    print("[!] Aucun numéro fourni.")
+    exit()
 
-$validationResult = json_decode($json, true);
-$validationResult['country_code'];
-$validationResult['carrier'];
-$validationResult['location'];
-$validationResult['country_name'];
-$validationResult['line_type'];
+print("Collecting information...")
+time.sleep(1)
 
-if($phone_number)
-{
- echo "Carrier:". ' '.$validationResult['carrier']."\n";
- echo "Country Code:". ' ' .$validationResult['country_code']."\n";
- echo "Location:". ' ' .$validationResult['location']."\n";
- echo "Country Name:". ' ' .$validationResult['country_name']."\n";
- echo "Line Type:". ' ' .$validationResult['line_type']."\n";
+url = "https://api.apilayer.com/number_verification/validate"
+params = {
+    "number": phone_number
 }
 
-?>
+headers = {
+    "apikey": api_key
+}
+
+try:
+    response = requests.get(url, headers=headers, params=params)
+    response.raise_for_status()
+except requests.RequestException as e:
+    print(f"[!] Erreur HTTP : {e}")
+    exit()
+
+data = response.json()
+
+# Vérification d’erreur API
+if "error" in data:
+    print("[!] Erreur API :", data["error"].get("message", "Erreur inconnue"))
+    exit()
+
+print("\n=== Phone Lookup Result ===")
+print("Valid:        ", "Yes" if data.get("valid") else "No")
+print("Number:       ", data.get("international_format", "N/A"))
+print("Local Format: ", data.get("local_format", "N/A"))
+print("Country Code: ", data.get("country_code", "N/A"))
+print("Country:      ", data.get("country_name", "N/A"))
+print("Location:     ", data.get("location", "N/A"))
+print("Carrier:      ", data.get("carrier", "N/A"))
+print("Line Type:    ", data.get("line_type", "N/A"))
